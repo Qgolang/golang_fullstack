@@ -3,10 +3,15 @@ package controllers
 import (
 	"fmt"
 	"github.com/Qgolang/golang_fullstack/api/models"
-	"github.com/gorilla/mux"
-	"github.com/jinzhu/gorm"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/mux"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/mysql"    //mysql database driver
+	_ "github.com/jinzhu/gorm/dialects/postgres" //postgres database driver
+	_ "github.com/jinzhu/gorm/dialects/sqlite"   // sqlite database driver
+
 )
 
 type Server struct {
@@ -29,19 +34,25 @@ func (server *Server) Initialize(Dbdriver, DbUser, DbPassword, DbPort, DbHost, D
 		}
 	}
 	if Dbdriver == "postgres" {
-		//DBURL := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=disable password=%s", DbHost, DbPort, DbUser, DbName, DbPassword)
-		//server.DB, err = gorm.Open(Dbdriver, DBURL)
-
-		DBURL := "host=postgres user=postgres password=postgres dbname=postgres port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+		DBURL := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=disable password=%s", DbHost, DbPort, DbUser, DbName, DbPassword)
 		server.DB, err = gorm.Open(Dbdriver, DBURL)
-		//db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-
 		if err != nil {
-			fmt.Printf("Cannot connect to %s database: error %s", Dbdriver, err)
+			fmt.Printf("Cannot connect to %s database", Dbdriver)
 			log.Fatal("This is the error:", err)
 		} else {
-			fmt.Printf("\nWe are connected to the %s database", Dbdriver)
+			fmt.Printf("We are connected to the %s database", Dbdriver)
 		}
+	}
+	if Dbdriver == "sqlite3" {
+		//DBURL := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=disable password=%s", DbHost, DbPort, DbUser, DbName, DbPassword)
+		server.DB, err = gorm.Open(Dbdriver, DbName)
+		if err != nil {
+			fmt.Printf("Cannot connect to %s database\n", Dbdriver)
+			log.Fatal("This is the error:", err)
+		} else {
+			fmt.Printf("We are connected to the %s database\n", Dbdriver)
+		}
+		server.DB.Exec("PRAGMA foreign_keys = ON")
 	}
 
 	server.DB.Debug().AutoMigrate(&models.User{}, &models.Post{}) //database migration
